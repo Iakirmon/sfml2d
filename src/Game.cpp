@@ -1,6 +1,8 @@
 #include "Game.h"
 
 #include <algorithm>
+#include <fstream>
+#include <string>
 
 Game::Game()
     : window_(sf::VideoMode(1280, 720), "Platformer") {
@@ -24,9 +26,18 @@ Game::Game()
     hudTextLives_.setFillColor(sf::Color::White);
     hudTextLives_.setPosition(10.f, 40.f);
 
+    hudTextTime_.setFont(font_);
+    hudTextTime_.setCharacterSize(20);
+    hudTextTime_.setFillColor(sf::Color::White);
+    hudTextTime_.setPosition(10.f, 70.f);
+
     centerText_.setFont(font_);
     centerText_.setCharacterSize(36);
     centerText_.setFillColor(sf::Color::White);
+
+    inputText_.setFont(font_);
+    inputText_.setCharacterSize(24);
+    inputText_.setFillColor(sf::Color::Yellow);
 }
 
 void Game::run() {
@@ -53,13 +64,34 @@ void Game::handleEvents() {
         }
         if (event.type == sf::Event::KeyPressed &&
             event.key.code == sf::Keyboard::R &&
-            state_ != GameState::PLAYING) {
+            state_ == GameState::GAME_OVER) {
             reset();
+        }
+        
+        // Handle input name when WINNING
+        if (state_ == GameState::WINNING) {
+            if (event.type == sf::Event::TextEntered) {
+                char c = static_cast<char>(event.text.unicode);
+                if (c >= 32 && c < 127 && playerInput_.length() < maxInputLength_) {
+                    playerInput_ += c;
+                }
+            }
+            if (event.type == sf::Event::KeyPressed) {
+                if (event.key.code == sf::Keyboard::BackSpace && !playerInput_.empty()) {
+                    playerInput_.pop_back();
+                }
+                if (event.key.code == sf::Keyboard::Return && !playerInput_.empty()) {
+                    saveScore(playerInput_);
+                    reset();
+                }
+            }
         }
     }
 }
 
 void Game::update(float dt) {
+    elapsedTime_ += dt;
+    
     player_.handleInput();
     player_.update(dt);
     level_.checkCollisions(player_);
@@ -72,7 +104,7 @@ void Game::update(float dt) {
         state_ = GameState::GAME_OVER;
     }
     if (level_.allCoinsCollected()) {
-        state_ = GameState::WIN;
+        state_ = GameState::WINNING;  // Change to WINNING for player name input
     }
 }
 
@@ -85,6 +117,8 @@ void Game::render() {
 
     if (state_ == GameState::GAME_OVER) {
         drawGameOver();
+    } else if (state_ == GameState::WINNING) {
+        drawWinningScreen();
     } else if (state_ == GameState::WIN) {
         drawWin();
     }
@@ -95,13 +129,19 @@ void Game::render() {
 void Game::drawHUD() {
     const auto total = level_.getTotalCoins();
     const auto collected = level_.getCollectedCoins();
+    
+    int minutes = static_cast<int>(elapsedTime_) / 60;
+    int seconds = static_cast<int>(elapsedTime_) % 60;
 
     hudTextCoins_.setString(
         "Coins: " + std::to_string(collected) + " / " + std::to_string(total));
     hudTextLives_.setString("Lives: " + std::to_string(player_.getLives()));
+    hudTextTime_.setString("Time: " + std::to_string(minutes) + ":" + 
+                           (seconds < 10 ? "0" : "") + std::to_string(seconds));
 
     window_.draw(hudTextCoins_);
     window_.draw(hudTextLives_);
+    window_.draw(hudTextTime_);
 }
 
 void Game::drawGameOver() {
@@ -120,7 +160,50 @@ void Game::drawWin() {
     window_.draw(centerText_);
 }
 
+void Game::drawWinningScreen() {
+    centerText_.setString("YOU WIN!\nEnter your name:");
+    sf::FloatRect bounds = centerText_.getLocalBounds();
+    centerText_.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
+    centerText_.setPosition(1280.f / 2.f, 250.f);
+    window_.draw(centerText_);
+    
+    inputText_.setString(playerInput_ + "_");
+    sf::FloatRect inputBounds = inputText_.getLocalBounds();
+    inputText_.setOrigin(inputBounds.width / 2.f, inputBounds.height / 2.f);
+    inputText_.setPosition(1280.f / 2.f, 400.f);
+    window_.draw(inputText_);
+    
+    sf::Text pressEnterText;
+    pressEnterText.setFont(font_);
+    pressEnterText.setCharacterSize(16);
+    pressEnterText.setFillColor(sf::Color::White);
+    pressEnterText.setString("Press ENTER to confirm");
+    sf::FloatRect enterBounds = pressEnterText.getLocalBounds();
+    pressEnterText.setOrigin(enterBounds.width / 2.f, enterBounds.height / 2.f);
+    pressEnterText.setPosition(1280.f / 2.f, 500.f);
+    window_.draw(pressEnterText);
+}
+
+void Game::saveScore(const std::string& playerName) {
+    // Simple JSON format - append to scores.json file
+    std::ofstream file("scores.json", std::ios::app);
+    if (file.is_open()) {
+        int minutes = static_cast<int>(elapsedTime_) / 60;
+        int seconds = static_cast<int>(elapsedTime_) % 60;
+        std::string timeStr = std::to_string(minutes) + ":" + 
+                              (seconds < 10 ? "0" : "") + std::to_string(seconds);
+        
+        file << "{\"name\":\"" << playerName << "\",\"time\":\"" << timeStr << "\",\"coins\":" 
+             << level_.getCollectedCoins() << "}\n";
+        file.close();
+    }
+}
+
 void Game::reset() {
-    *this = Game(); // reconstructs game (simple reset)
+    state_ = GameState::PLAYING;
+    player_ = Player();
+    level_.load();
+    elapsedTime_ = 0.f;
+    playerInput_ = "";
 }
 

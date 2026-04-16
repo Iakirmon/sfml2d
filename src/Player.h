@@ -24,6 +24,9 @@ private:
     sf::RectangleShape shape_;
     sf::Vector2f velocity_{0.f, 0.f};
     bool isOnGround_{false};
+    bool canDoubleJump_{false};
+    bool canTripleJump_{false};
+    bool spaceWasPressed_{false};
     int lives_{3};
     sf::Vector2f spawnPosition_{100.f, 300.f};
 };

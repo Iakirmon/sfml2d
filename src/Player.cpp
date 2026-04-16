@@ -26,11 +26,26 @@ void Player::handleInput() {
         vx += MOVE_SPEED;
     }
 
-    // Jump
-    if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Space)) && isOnGround_) {
-        velocity_.y = JUMP_VELOCITY;
-        isOnGround_ = false;
+    // Jump or Double Jump or Triple Jump (detect NEW key press, not held)
+    bool spacePressed = sf::Keyboard::isKeyPressed(sf::Keyboard::Space);
+    if (spacePressed && !spaceWasPressed_) {
+        if (isOnGround_) {
+            // First jump
+            velocity_.y = JUMP_VELOCITY;
+            isOnGround_ = false;
+            canDoubleJump_ = true;  // Allow double jump
+        } else if (canDoubleJump_) {
+            // Double jump
+            velocity_.y = JUMP_VELOCITY;
+            canDoubleJump_ = false;  // Only one double jump
+            canTripleJump_ = true;   // Allow triple jump after double jump
+        } else if (canTripleJump_){
+            // Triple jump
+            velocity_.y = JUMP_VELOCITY;
+            canTripleJump_ = false;  // Only one triple jump
+        }
     }
+    spaceWasPressed_ = spacePressed;
 
     velocity_.x = vx;
 }
@@ -68,6 +83,9 @@ void Player::setVelocityY(float vy) {
 
 void Player::setOnGround(bool val) {
     isOnGround_ = val;
+    if (val) {
+        canDoubleJump_ = false;  // Reset double jump when on ground
+    }
 }
 
 int Player::getLives() const {

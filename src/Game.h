@@ -7,7 +7,8 @@
 enum class GameState {
     PLAYING,
     GAME_OVER,
-    WIN
+    WIN,
+    WINNING  // Waiting for player name input
 };
 
 class Game {
@@ -23,7 +24,9 @@ private:
     void drawHUD();
     void drawGameOver();
     void drawWin();
+    void drawWinningScreen();
     void reset();
+    void saveScore(const std::string& playerName);
 
     sf::RenderWindow window_;
     sf::Font font_;
@@ -35,6 +38,12 @@ private:
 
     sf::Text hudTextCoins_;
     sf::Text hudTextLives_;
+    sf::Text hudTextTime_;
     sf::Text centerText_;
+    sf::Text inputText_;
+    
+    float elapsedTime_{0.f};
+    std::string playerInput_{""};
+    int maxInputLength_{20};
 };
 

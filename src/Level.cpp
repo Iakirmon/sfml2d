@@ -13,15 +13,15 @@ void Level::load() {
     platforms_.emplace_back(100.f,  500.f,  200.f, 20.f);
     platforms_.emplace_back(350.f,  400.f,  150.f, 20.f);
     platforms_.emplace_back(550.f,  520.f,  200.f, 20.f);
-    platforms_.emplace_back(800.f,  350.f,  180.f, 20.f);
-    platforms_.emplace_back(1050.f, 470.f,  160.f, 20.f);
+    platforms_.emplace_back(800.f,  500.f,  180.f, 20.f);
+    platforms_.emplace_back(1050.f, 520.f,  160.f, 20.f);
 
     // Coins
     coins_.emplace_back(200.f,  460.f);
     coins_.emplace_back(425.f,  360.f);
-    coins_.emplace_back(650.f,  480.f);
-    coins_.emplace_back(890.f,  310.f);
-    coins_.emplace_back(1130.f, 430.f);
+    coins_.emplace_back(650.f,  468.f);
+    coins_.emplace_back(890.f,  360.f);
+    coins_.emplace_back(1130.f, 460.f);
 }
 
 void Level::checkCollisions(Player& player) {
