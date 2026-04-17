@@ -97,6 +97,14 @@ void Game::handleEvents() {
             }
             if (event.type == sf::Event::MouseButtonPressed &&
                 event.mouseButton.button == sf::Mouse::Left) {
+                // Aktualizuj zaznaczenie na podstawie pozycji kliknięcia
+                sf::Vector2f click(static_cast<float>(event.mouseButton.x),
+                                   static_cast<float>(event.mouseButton.y));
+                const float itemY[3] = {320.f, 390.f, 460.f};
+                for (int i = 0; i < 3; ++i) {
+                    if (click.y >= itemY[i] - 30.f && click.y <= itemY[i] + 30.f)
+                        menuSelectedItem_ = i;
+                }
                 if      (menuSelectedItem_ == 0) startGame();
                 else if (menuSelectedItem_ == 1) { loadTopScores(); state_ = GameState::SCORES; }
                 else if (menuSelectedItem_ == 2) window_.close();
@@ -407,6 +415,9 @@ void Game::loadTopScores() {
     std::string line;
 
     while (std::getline(file, line)) {
+        // Usuń \r na końcu linii (Windows \r\n)
+        if (!line.empty() && line.back() == '\r')
+            line.pop_back();
         if (line.empty()) continue;
         ScoreEntry e;
 
