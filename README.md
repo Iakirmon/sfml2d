@@ -5,7 +5,8 @@
 ---
 
 Gra platformowa 2D napisana w C++17 z użyciem biblioteki SFML 2.x.  
-Gracz porusza się po platformach, zbiera monety, skacze (triple jump), a całość uzupełniają animacje sprite'ów, efekty dźwiękowe, muzyka w tle i wielowarstwowe tło parallax.
+Gracz porusza się po platformach, zbiera monety, skacze (triple jump), a całość uzupełniają animacje sprite'ów, efekty dźwiękowe, muzyka w tle i wielowarstwowe tło parallax.  
+Gra posiada menu główne, ekran wyników (Top 10) oraz zapis wyników do pliku JSON.
 
 ---
 
@@ -74,23 +75,49 @@ Platformer.exe      # Windows
 
 ## Sterowanie
 
+### Menu główne
+
+| Klawisz / Akcja | Opis |
+|---|---|
+| `↑` / `↓` | Poruszanie po opcjach |
+| Ruch myszy | Podświetlenie opcji pod kursorem |
+| `Enter` / LPM | Wybór opcji |
+
+### W grze
+
 | Klawisz | Akcja |
 |---|---|
 | `A` / `←` | Ruch w lewo |
 | `D` / `→` | Ruch w prawo |
 | `Spacja` | Skok (do 3× w powietrzu) |
-| `R` | Restart po game over |
-| `Enter` | Zatwierdź nick po wygranej |
+
+### Po grze
+
+| Klawisz | Akcja |
+|---|---|
+| `R` | Natychmiastowy restart (Game Over) |
+| `Escape` | Powrót do menu (Game Over) |
+| `Enter` | Zatwierdź nick po wygranej → powrót do menu |
 
 ---
 
 ## Mechanika gry
 
+- Gra startuje w **menu głównym** z animowanym tłem parallax.
 - Gracz ma **3 życia** — wypadnięcie poza dolną krawędź ekranu powoduje respawn i utratę życia.
-- Brak żyć → ekran **GAME OVER**.
+- Brak żyć → ekran **GAME OVER** (R = restart, Escape = menu).
 - **Monety** na mapie — zebrane znikają i zwiększają licznik.
 - Zebranie wszystkich → ekran **YOU WIN** z formularzem na nick gracza.
 - Wyniki (nick, czas, monety) zapisywane są do pliku `scores.json`.
+- **Ekran Top 10** — wyniki posortowane rosnąco po czasie (szybciej = wyżej).
+
+### Menu główne
+
+| Opcja | Akcja |
+|---|---|
+| **Start** | Rozpoczyna grę od nowa |
+| **Najlepsze wyniki** | Ekran Top 10 z `scores.json` |
+| **Wyjdź** | Zamknięcie gry |
 
 ### HUD (lewy górny róg)
 
@@ -100,24 +127,30 @@ Platformer.exe      # Windows
 
 ---
 
-## Assety (wymagane do pełnego działania)
+## Wyniki (`scores.json`)
 
-Gra nie crashuje przy braku plików — wyświetla placeholder lub gra w ciszy.  
-Poniższe pliki należy umieścić we wskazanych ścieżkach przed buildem:
+Plik tworzony automatycznie po wygranej — jeden wpis na linię:
+
+```json
+{"name":"Jan","time":"1:23","coins":5}
+```
+
+Ekran Top 10 wczytuje plik przy każdym otwarciu, sortuje po czasie i wyświetla maksymalnie 10 wyników.
+
+---
+
+## Assety
+
+Gra nie crashuje przy braku plików — działa bez dźwięku / bez tekstury.
 
 ### Tekstury
 
 | Ścieżka | Opis |
 |---|---|
-| `assets/textures/player_sheet.png` | Spritesheet gracza — klatki **32×32 px**, min. 4 wiersze: idle, run, jump, fall |
-| `assets/textures/bg_clouds.png` | Warstwa parallax — chmury (tileable, PNG z alpha) |
+| `assets/textures/player_sheet.png` | Spritesheet gracza (9 kolumn × 3 wiersze, klatki 80×110 px) |
+| `assets/textures/bg_clouds.png` | Warstwa parallax — chmury |
 | `assets/textures/bg_mountains.png` | Warstwa parallax — góry |
 | `assets/textures/bg_trees.png` | Warstwa parallax — drzewa |
-
-**Polecane darmowe źródła:**
-- [kenney.nl/assets/platformer-characters-1](https://kenney.nl/assets/platformer-characters-1) — spritesheet gracza (CC0)
-- [kenney.nl/assets/background-elements](https://kenney.nl/assets/background-elements) — elementy tła (CC0)
-- [craftpix.net/freebies](https://craftpix.net/freebies/) — paczki tła platformerów
 
 ### Dźwięki SFX
 
@@ -132,20 +165,18 @@ Poniższe pliki należy umieścić we wskazanych ścieżkach przed buildem:
 
 | Ścieżka | Kiedy gra |
 |---|---|
+| `assets/music/menu.ogg` | Menu główne (pętla) |
 | `assets/music/gameplay.ogg` | Podczas rozgrywki (pętla) |
 | `assets/music/gameover.ogg` | Ekran game over |
 | `assets/music/win.ogg` | Ekran wygranej |
 
-**Polecane darmowe źródła audio:**
-- [kenney.nl/assets/interface-sounds](https://kenney.nl/assets/interface-sounds) — SFX (CC0)
-- [opengameart.org/content/platformer-game-music](https://opengameart.org/content/platformer-game-music) — muzyka (CC-BY 3.0)
-- [freesound.org](https://freesound.org) — filtrem CC0
+Pliki muzyczne dołączone w repo pochodzą z paczki **Kenney Music Jingles** (CC0).
 
 ### Czcionka
 
 | Ścieżka | Opis |
 |---|---|
-| `assets/fonts/Roboto-Regular.ttf` | Czcionka HUD (Google Fonts, OFL) |
+| `assets/fonts/Roboto-Regular.ttf` | Czcionka HUD i UI (Google Fonts, OFL) |
 
 ---
 
@@ -159,6 +190,7 @@ Poniższe pliki należy umieścić we wskazanych ścieżkach przed buildem:
 │   ├── fonts/
 │   │   └── Roboto-Regular.ttf
 │   ├── music/
+│   │   ├── menu.ogg
 │   │   ├── gameplay.ogg
 │   │   ├── gameover.ogg
 │   │   └── win.ogg
@@ -177,7 +209,8 @@ Poniższe pliki należy umieścić we wskazanych ścieżkach przed buildem:
 │   ├── spec_02_animacje.md
 │   ├── spec_03_dzwieki_sfx.md
 │   ├── spec_04_muzyka.md
-│   └── spec_05_parallax.md
+│   ├── spec_05_parallax.md
+│   └── spec_06_menu_glowne.md
 └── src/
     ├── main.cpp
     ├── Game.h / Game.cpp
@@ -196,7 +229,7 @@ Poniższe pliki należy umieścić we wskazanych ścieżkach przed buildem:
 
 | Klasa | Odpowiedzialność |
 |---|---|
-| `Game` | Pętla gry, stany, HUD, muzyka, parallax |
+| `Game` | Pętla gry, stany (MENU/PLAYING/GAME_OVER/WINNING/SCORES), HUD, muzyka, parallax, wyniki |
 | `Player` | Fizyka, input, animacje, sprite, lives |
 | `Level` | Ładowanie platform i monet, detekcja kolizji |
 | `Platform` | Prostokąt kolizyjny platformy |
@@ -209,10 +242,9 @@ Poniższe pliki należy umieścić we wskazanych ścieżkach przed buildem:
 
 ## Licencja fontu
 
-Projekt używa czcionki **Roboto** (Google Fonts) — licencja Open Font License (OFL), plik `assets/fonts/OFL.txt`.
+Projekt używa czcionki **Roboto** (Google Fonts) — licencja Open Font License (OFL).
 
 ---
-
 ---
 
 # English version
@@ -220,7 +252,8 @@ Projekt używa czcionki **Roboto** (Google Fonts) — licencja Open Font License
 # Platformer 2D (SFML, C++)
 
 A 2D platformer game written in C++17 using the SFML 2.x library.  
-The player moves across platforms, collects coins, jumps (triple jump), with sprite animations, sound effects, background music and a multi-layer parallax background.
+The player moves across platforms, collects coins, jumps (triple jump), with sprite animations, sound effects, background music and a multi-layer parallax background.  
+The game includes a main menu, a Top 10 leaderboard screen and score saving to a JSON file.
 
 ---
 
@@ -289,23 +322,49 @@ Platformer.exe      # Windows
 
 ## Controls
 
+### Main menu
+
+| Key / Action | Description |
+|---|---|
+| `↑` / `↓` | Navigate menu options |
+| Mouse move | Highlight option under cursor |
+| `Enter` / LMB | Select option |
+
+### In-game
+
 | Key | Action |
 |---|---|
 | `A` / `←` | Move left |
 | `D` / `→` | Move right |
 | `Space` | Jump (up to 3× in the air) |
-| `R` | Restart after game over |
-| `Enter` | Confirm name after winning |
+
+### After game
+
+| Key | Action |
+|---|---|
+| `R` | Instant restart (Game Over) |
+| `Escape` | Return to menu (Game Over) |
+| `Enter` | Confirm name after winning → back to menu |
 
 ---
 
 ## Gameplay
 
+- The game starts at the **main menu** with an animated parallax background.
 - The player has **3 lives** — falling off the bottom of the screen causes a respawn and costs a life.
-- No lives left → **GAME OVER** screen.
+- No lives left → **GAME OVER** screen (R = restart, Escape = menu).
 - **Coins** are placed on the map — collected coins disappear and increase the counter.
 - Collecting all coins → **YOU WIN** screen with a name input form.
 - Results (name, time, coins) are saved to `scores.json`.
+- **Top 10 screen** — scores sorted ascending by time (faster = higher rank).
+
+### Main menu
+
+| Option | Action |
+|---|---|
+| **Start** | Begin a new game |
+| **Best scores** | Top 10 screen from `scores.json` |
+| **Exit** | Close the game |
 
 ### HUD (top-left corner)
 
@@ -315,26 +374,32 @@ Platformer.exe      # Windows
 
 ---
 
-## Assets (required for full functionality)
+## Scores (`scores.json`)
 
-The game does not crash on missing files — it shows a placeholder or runs silently.  
-Place the files below at the indicated paths before building:
+Created automatically after winning — one entry per line:
+
+```json
+{"name":"Jan","time":"1:23","coins":5}
+```
+
+The Top 10 screen loads the file on every open, sorts by time and displays at most 10 entries.
+
+---
+
+## Assets
+
+The game does not crash on missing files — it runs without sound / without texture.
 
 ### Textures
 
 | Path | Description |
 |---|---|
-| `assets/textures/player_sheet.png` | Player spritesheet — **32×32 px** frames, min. 4 rows: idle, run, jump, fall |
-| `assets/textures/bg_clouds.png` | Parallax layer — clouds (tileable PNG with alpha) |
+| `assets/textures/player_sheet.png` | Player spritesheet (9 cols × 3 rows, 80×110 px frames) |
+| `assets/textures/bg_clouds.png` | Parallax layer — clouds |
 | `assets/textures/bg_mountains.png` | Parallax layer — mountains |
 | `assets/textures/bg_trees.png` | Parallax layer — trees |
 
-**Recommended free sources:**
-- [kenney.nl/assets/platformer-characters-1](https://kenney.nl/assets/platformer-characters-1) — player spritesheet (CC0)
-- [kenney.nl/assets/background-elements](https://kenney.nl/assets/background-elements) — background elements (CC0)
-- [craftpix.net/freebies](https://craftpix.net/freebies/) — platformer background packs
-
-### Sound Effects
+### Sound effects
 
 | Path | Event |
 |---|---|
@@ -347,20 +412,18 @@ Place the files below at the indicated paths before building:
 
 | Path | When it plays |
 |---|---|
+| `assets/music/menu.ogg` | Main menu (loop) |
 | `assets/music/gameplay.ogg` | During gameplay (loop) |
 | `assets/music/gameover.ogg` | Game over screen |
 | `assets/music/win.ogg` | Win screen |
 
-**Recommended free audio sources:**
-- [kenney.nl/assets/interface-sounds](https://kenney.nl/assets/interface-sounds) — SFX (CC0)
-- [opengameart.org/content/platformer-game-music](https://opengameart.org/content/platformer-game-music) — music (CC-BY 3.0)
-- [freesound.org](https://freesound.org) — filter by CC0
+Music files included in the repo come from the **Kenney Music Jingles** pack (CC0).
 
 ### Font
 
 | Path | Description |
 |---|---|
-| `assets/fonts/Roboto-Regular.ttf` | HUD font (Google Fonts, OFL) |
+| `assets/fonts/Roboto-Regular.ttf` | HUD and UI font (Google Fonts, OFL) |
 
 ---
 
@@ -374,6 +437,7 @@ Place the files below at the indicated paths before building:
 │   ├── fonts/
 │   │   └── Roboto-Regular.ttf
 │   ├── music/
+│   │   ├── menu.ogg
 │   │   ├── gameplay.ogg
 │   │   ├── gameover.ogg
 │   │   └── win.ogg
@@ -392,7 +456,8 @@ Place the files below at the indicated paths before building:
 │   ├── spec_02_animacje.md
 │   ├── spec_03_dzwieki_sfx.md
 │   ├── spec_04_muzyka.md
-│   └── spec_05_parallax.md
+│   ├── spec_05_parallax.md
+│   └── spec_06_menu_glowne.md
 └── src/
     ├── main.cpp
     ├── Game.h / Game.cpp
@@ -411,7 +476,7 @@ Place the files below at the indicated paths before building:
 
 | Class | Responsibility |
 |---|---|
-| `Game` | Game loop, states, HUD, music, parallax |
+| `Game` | Game loop, states (MENU/PLAYING/GAME_OVER/WINNING/SCORES), HUD, music, parallax, scores |
 | `Player` | Physics, input, animations, sprite, lives |
 | `Level` | Loading platforms and coins, collision detection |
 | `Platform` | Platform collision rectangle |
@@ -424,4 +489,4 @@ Place the files below at the indicated paths before building:
 
 ## Font license
 
-This project uses the **Roboto** font (Google Fonts) — Open Font License (OFL), see `assets/fonts/OFL.txt`.
+This project uses the **Roboto** font (Google Fonts) — Open Font License (OFL).

@@ -3,16 +3,25 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <deque>
+#include <vector>
 #include "Player.h"
 #include "Level.h"
 #include "AudioManager.h"
 #include "ParallaxLayer.h"
 
 enum class GameState {
+    MENU,
     PLAYING,
     GAME_OVER,
     WIN,
-    WINNING  // Waiting for player name input
+    WINNING,
+    SCORES,
+};
+
+struct ScoreEntry {
+    std::string name;
+    std::string time;
+    int coins{0};
 };
 
 class Game {
@@ -29,7 +38,10 @@ private:
     void drawGameOver();
     void drawWin();
     void drawWinningScreen();
-    void reset();
+    void drawMenu();
+    void drawScores();
+    void startGame();
+    void loadTopScores();
     void saveScore(const std::string& playerName);
     void playMusic(const std::string& filepath, bool loop = true, float volume = 50.f);
     void stopMusic();
@@ -37,7 +49,7 @@ private:
     sf::RenderWindow window_;
     sf::Font font_;
 
-    GameState state_{GameState::PLAYING};
+    GameState state_{GameState::MENU};
 
     Player player_;
     Level level_;
@@ -50,9 +62,12 @@ private:
     sf::Text hudTextTime_;
     sf::Text centerText_;
     sf::Text inputText_;
-    
+
     float elapsedTime_{0.f};
     std::string playerInput_{""};
     int maxInputLength_{20};
-};
 
+    int   menuSelectedItem_{0};
+    float menuScrollOffset_{0.f};
+    std::vector<ScoreEntry> topScores_;
+};
