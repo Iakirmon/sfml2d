@@ -1,7 +1,9 @@
 #include "Game.h"
 
 #include <algorithm>
+#include <filesystem>
 #include <fstream>
+#include <sstream>
 #include <string>
 
 Game::Game()
@@ -336,77 +338,98 @@ void Game::drawMenu() {
 }
 
 void Game::drawScores() {
-    sf::Text title;
-    title.setFont(font_);
-    title.setCharacterSize(48);
-    title.setFillColor(sf::Color::White);
-    title.setString("TOP 10 WYNIKOW");
-    sf::FloatRect tb = title.getLocalBounds();
-    title.setOrigin(tb.width / 2.f, tb.height / 2.f);
-    title.setPosition(1280.f / 2.f, 80.f);
-    window_.draw(title);
+    // --- Ciemny panel dla czytelnosci ---
+    sf::RectangleShape panel(sf::Vector2f(780.f, 622.f));
+    panel.setFillColor(sf::Color(8, 8, 24, 215));
+    panel.setOutlineColor(sf::Color(200, 170, 50, 180));
+    panel.setOutlineThickness(2.f);
+    panel.setPosition(250.f, 49.f);
+    window_.draw(panel);
 
-    const float COL_RANK  = 300.f;
-    const float COL_NAME  = 350.f;
-    const float COL_TIME  = 660.f;
-    const float COL_COINS = 760.f;
-
-    auto makeHeader = [&](const std::string& str, float x) {
-        sf::Text h;
-        h.setFont(font_);
-        h.setCharacterSize(20);
-        h.setFillColor(sf::Color(180, 180, 180));
-        h.setString(str);
-        h.setPosition(x, 160.f);
-        window_.draw(h);
+    // Pomocnicze lambdy do rysowania
+    auto drawText = [&](const std::string& str, float x, float y,
+                        unsigned sz, sf::Color col) {
+        sf::Text t;
+        t.setFont(font_);
+        t.setCharacterSize(sz);
+        t.setFillColor(col);
+        t.setString(str);
+        t.setPosition(x, y);
+        window_.draw(t);
     };
-    makeHeader("#",      COL_RANK);
-    makeHeader("IMIE",   COL_NAME);
-    makeHeader("CZAS",   COL_TIME);
-    makeHeader("MONETY", COL_COINS);
+    auto drawTextC = [&](const std::string& str, float y,
+                         unsigned sz, sf::Color col) {
+        sf::Text t;
+        t.setFont(font_);
+        t.setCharacterSize(sz);
+        t.setFillColor(col);
+        t.setString(str);
+        sf::FloatRect b = t.getLocalBounds();
+        t.setOrigin(b.width / 2.f, 0.f);
+        t.setPosition(640.f, y);
+        window_.draw(t);
+    };
+    auto drawLine = [&](float y, sf::Color col = sf::Color(100, 100, 100, 180)) {
+        sf::RectangleShape r(sf::Vector2f(740.f, 1.f));
+        r.setFillColor(col);
+        r.setPosition(270.f, y);
+        window_.draw(r);
+    };
 
+    // Tytul
+    drawTextC("TOP 10 WYNIKOW", 66.f, 40, sf::Color(255, 215, 0));
+    drawLine(122.f, sf::Color(200, 170, 50, 200));
+
+    // Naglowki kolumn
+    const float COL_RANK  = 272.f;
+    const float COL_NAME  = 318.f;
+    const float COL_TIME  = 680.f;
+    const float COL_COINS = 782.f;
+    const sf::Color HDR_COL(160, 160, 160);
+
+    drawText("#",      COL_RANK,  130.f, 16, HDR_COL);
+    drawText("IMIE",   COL_NAME,  130.f, 16, HDR_COL);
+    drawText("CZAS",   COL_TIME,  130.f, 16, HDR_COL);
+    drawText("MONETY", COL_COINS, 130.f, 16, HDR_COL);
+    drawLine(156.f);
+
+    // Wiersze wynikow
     if (topScores_.empty()) {
-        sf::Text empty;
-        empty.setFont(font_);
-        empty.setCharacterSize(24);
-        empty.setFillColor(sf::Color(180, 180, 180));
-        empty.setString("Brak wynikow. Zagraj i wygraj!");
-        sf::FloatRect eb = empty.getLocalBounds();
-        empty.setOrigin(eb.width / 2.f, eb.height / 2.f);
-        empty.setPosition(1280.f / 2.f, 360.f);
-        window_.draw(empty);
+        drawTextC("Brak wynikow – zagraj i wygraj, aby zobaczyc ranking!",
+                  330.f, 19, sf::Color(160, 160, 160));
+        // Sciezka pliku – diagnostyka
+        drawTextC("Szukam: " + scoresPath_,
+                  364.f, 13, sf::Color(100, 100, 100));
     } else {
         for (int i = 0; i < static_cast<int>(topScores_.size()); ++i) {
-            const auto& s = topScores_[i];
-            float y = 195.f + i * 30.f;
-            sf::Color color = (i == 0) ? sf::Color::Yellow : sf::Color::White;
+            const ScoreEntry& s = topScores_[i];
+            const float ry = 162.f + i * 34.f;
 
-            auto makeCell = [&](const std::string& str, float x) {
-                sf::Text t;
-                t.setFont(font_);
-                t.setCharacterSize(22);
-                t.setFillColor(color);
-                t.setString(str);
-                t.setPosition(x, y);
-                window_.draw(t);
-            };
+            // Lekkie tlo co drugiego wiersza
+            if (i % 2 == 1) {
+                sf::RectangleShape rowBg(sf::Vector2f(740.f, 33.f));
+                rowBg.setFillColor(sf::Color(255, 255, 255, 10));
+                rowBg.setPosition(270.f, ry);
+                window_.draw(rowBg);
+            }
 
-            makeCell(std::to_string(i + 1) + ".", COL_RANK);
-            makeCell(s.name,                       COL_NAME);
-            makeCell(s.time,                       COL_TIME);
-            makeCell(std::to_string(s.coins),      COL_COINS);
+            // Zloto / srebro / braz / biel
+            sf::Color col;
+            if      (i == 0) col = sf::Color(255, 215,   0);
+            else if (i == 1) col = sf::Color(192, 192, 192);
+            else if (i == 2) col = sf::Color(210, 140,  50);
+            else             col = sf::Color(220, 220, 220);
+
+            drawText(std::to_string(i + 1) + ".", COL_RANK,  ry + 7.f, 18, col);
+            drawText(s.name,                       COL_NAME,  ry + 7.f, 18, col);
+            drawText(s.time,                       COL_TIME,  ry + 7.f, 18, col);
+            drawText(std::to_string(s.coins),      COL_COINS, ry + 7.f, 18, col);
         }
     }
 
-    sf::Text hint;
-    hint.setFont(font_);
-    hint.setCharacterSize(16);
-    hint.setFillColor(sf::Color(200, 200, 200));
-    hint.setString("Escape / Enter / klik - powrot do menu");
-    sf::FloatRect hb = hint.getLocalBounds();
-    hint.setOrigin(hb.width / 2.f, hb.height / 2.f);
-    hint.setPosition(1280.f / 2.f, 680.f);
-    window_.draw(hint);
+    drawLine(618.f);
+    drawTextC("Escape / Enter / klik - powrot do menu",
+              626.f, 15, sf::Color(130, 130, 130));
 }
 
 void Game::startGame() {
@@ -420,41 +443,58 @@ void Game::startGame() {
 
 void Game::loadTopScores() {
     topScores_.clear();
-    std::ifstream file("scores.json");
-    std::string line;
+    scoresPath_ = (std::filesystem::current_path() / "scores.json").string();
 
+    std::ifstream file(scoresPath_, std::ios::binary);
+    if (!file.is_open()) return;
+
+    std::string line;
     while (std::getline(file, line)) {
-        // Usuń \r na końcu linii (Windows \r\n)
-        if (!line.empty() && line.back() == '\r')
+        // Usuń końcowe białe znaki i \r (Windows \r\n)
+        while (!line.empty() && (line.back() == '\r' || line.back() == '\n' || line.back() == ' '))
             line.pop_back();
         if (line.empty()) continue;
-        ScoreEntry e;
 
+        // Wyciąga wartość klucza JSON – obsługuje spacje po ':' i oba formaty cudzysłowów
         auto extract = [&](const std::string& key, bool quoted) -> std::string {
-            auto pos = line.find("\"" + key + "\":");
-            if (pos == std::string::npos) return "";
-            pos += key.size() + 3;
+            const std::string searchKey = "\"" + key + "\"";
+            auto kp = line.find(searchKey);
+            if (kp == std::string::npos) return "";
+            auto cp = line.find(':', kp + searchKey.size());
+            if (cp == std::string::npos) return "";
+            auto vs = cp + 1;
+            while (vs < line.size() && line[vs] == ' ') ++vs;
+            if (vs >= line.size()) return "";
             if (quoted) {
-                pos++;
-                auto end = line.find('"', pos);
-                return line.substr(pos, end - pos);
+                if (line[vs] != '"') return "";
+                ++vs;
+                auto ve = line.find('"', vs);
+                if (ve == std::string::npos) return "";
+                return line.substr(vs, ve - vs);
             } else {
-                auto end = line.find_first_of(",}", pos);
-                return line.substr(pos, end - pos);
+                auto ve = line.find_first_of(",}", vs);
+                if (ve == std::string::npos) ve = line.size();
+                auto val = line.substr(vs, ve - vs);
+                while (!val.empty() && val.back() == ' ') val.pop_back();
+                return val;
             }
         };
 
-        e.name  = extract("name",  true);
-        e.time  = extract("time",  true);
-        auto cs = extract("coins", false);
-        if (!cs.empty()) e.coins = std::stoi(cs);
-        topScores_.push_back(e);
+        ScoreEntry e;
+        e.name       = extract("name",  true);
+        e.time       = extract("time",  true);
+        const auto cs = extract("coins", false);
+        if (!cs.empty()) { try { e.coins = std::stoi(cs); } catch (...) {} }
+
+        if (!e.name.empty() && !e.time.empty())
+            topScores_.push_back(e);
     }
 
     auto toSec = [](const std::string& t) -> int {
         auto col = t.find(':');
         if (col == std::string::npos) return 99999;
-        return std::stoi(t.substr(0, col)) * 60 + std::stoi(t.substr(col + 1));
+        try { return std::stoi(t.substr(0, col)) * 60 + std::stoi(t.substr(col + 1)); }
+        catch (...) { return 99999; }
     };
 
     std::sort(topScores_.begin(), topScores_.end(),

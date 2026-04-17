@@ -70,4 +70,5 @@ private:
     int   menuSelectedItem_{0};
     float menuScrollOffset_{0.f};
     std::vector<ScoreEntry> topScores_;
+    std::string scoresPath_{"scores.json"};
 };
