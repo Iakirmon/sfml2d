@@ -42,5 +42,15 @@ add_custom_command(TARGET Platformer POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/openal32.dll"        $<TARGET_FILE_DIR:Platformer>
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/ogg.dll"            $<TARGET_FILE_DIR:Platformer>
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/vorbis.dll"         $<TARGET_FILE_DIR:Platformer>
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/vorbisenc.dll"      $<TARGET_FILE_DIR:Platformer>
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/vorbisfile.dll"      $<TARGET_FILE_DIR:Platformer>
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/fmt.dll"              $<TARGET_FILE_DIR:Platformer>
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/freetype.dll"        $<TARGET_FILE_DIR:Platformer>
 )
