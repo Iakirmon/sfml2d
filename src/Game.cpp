@@ -241,6 +241,15 @@ void Game::update(float dt) {
 }
 
 void Game::render() {
+    static int renderLogCounter = 0;
+    if (state_ == GameState::SCORES) {
+        ++renderLogCounter;
+        if (renderLogCounter <= 5)
+            LOG("render: SCORES state, topScores_.size()=" + std::to_string(topScores_.size()));
+    } else {
+        renderLogCounter = 0;
+    }
+
     window_.clear(sf::Color(135, 206, 235));
 
     for (auto& layer : bgLayers_)
@@ -359,6 +368,17 @@ void Game::drawMenu() {
 }
 
 void Game::drawScores() {
+    static int drawLogCounter = 0;
+    ++drawLogCounter;
+    if (drawLogCounter <= 5)
+        LOG("drawScores: called, topScores_.size()=" + std::to_string(topScores_.size()));
+
+    // --- TEST: jaskrawy prostokat kontrolny (usun po naprawieniu) ---
+    sf::RectangleShape test(sf::Vector2f(200.f, 60.f));
+    test.setFillColor(sf::Color(255, 0, 0, 200));
+    test.setPosition(10.f, 10.f);
+    window_.draw(test);
+
     // --- Ciemny panel dla czytelnosci ---
     sf::RectangleShape panel(sf::Vector2f(780.f, 622.f));
     panel.setFillColor(sf::Color(8, 8, 24, 215));
