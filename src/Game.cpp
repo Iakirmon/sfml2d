@@ -124,6 +124,15 @@ void Game::handleEvents() {
             }
         }
 
+        // --- PLAYING ---
+        if (state_ == GameState::PLAYING) {
+            if (event.type == sf::Event::KeyPressed &&
+                event.key.code == sf::Keyboard::Escape) {
+                state_ = GameState::MENU;
+                playMusic("assets/music/menu.ogg");
+            }
+        }
+
         // --- GAME_OVER ---
         if (state_ == GameState::GAME_OVER) {
             if (event.type == sf::Event::KeyPressed) {
