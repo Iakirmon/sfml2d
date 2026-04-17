@@ -1,16 +1,28 @@
 #include "Game.h"
 
 #include <algorithm>
+#include <chrono>
 #include <fstream>
 #include <sstream>
 #include <string>
 
+// Prosty logger do pliku debug.log
+static void LOG(const std::string& msg) {
+    std::ofstream f("debug.log", std::ios::app);
+    if (f.is_open()) f << msg << "\n";
+}
+
 Game::Game()
     : window_(sf::VideoMode(1280, 720), "Platformer") {
+    // Wyczyść log i zapisz start
+    { std::ofstream f("debug.log"); f << "=== GAME START ===\n"; }
     window_.setFramerateLimit(60);
 
     if (!font_.loadFromFile("assets/fonts/Roboto-Regular.ttf")) {
+        LOG("FONT: nie znaleziono assets/fonts/Roboto-Regular.ttf, probuje fallback");
         font_.loadFromFile("Roboto-Regular.ttf");
+    } else {
+        LOG("FONT: zaladowano OK");
     }
 
     level_.load();
@@ -447,25 +459,34 @@ void Game::loadTopScores() {
     scoresPath_   = "scores.json";
     scoresStatus_ = "";
 
+    LOG("loadTopScores: scoresPath_ = " + scoresPath_);
+
     try {
         // Wczytaj cały plik jako jeden string (odporne na \r\n / \n / \r)
         std::ifstream file(scoresPath_, std::ios::binary);
         if (!file.is_open()) {
             scoresStatus_ = "BRAK PLIKU scores.json obok Platformer.exe";
+            LOG("loadTopScores: " + scoresStatus_);
             return;
         }
+        LOG("loadTopScores: plik otwarty OK");
 
         std::ostringstream buf;
         buf << file.rdbuf();
         const std::string content = buf.str();
+        LOG("loadTopScores: dlugosc pliku = " + std::to_string(content.size()) + " bajtow");
+        // Pierwsze 200 znaków do loga
+        LOG("loadTopScores: poczatek pliku = [" + content.substr(0, std::min<std::size_t>(200, content.size())) + "]");
 
         if (content.empty()) {
             scoresStatus_ = "PLIK PUSTY";
+            LOG("loadTopScores: " + scoresStatus_);
             return;
         }
 
         // Szukaj kolejnych obiektów { ... } – niezależnie od końcówek linii
         std::size_t pos = 0;
+        int objCount = 0;
         while (pos < content.size()) {
             const auto objStart = content.find('{', pos);
             if (objStart == std::string::npos) break;
@@ -474,6 +495,8 @@ void Game::loadTopScores() {
 
             const std::string obj = content.substr(objStart, objEnd - objStart + 1);
             pos = objEnd + 1;
+            objCount++;
+            LOG("loadTopScores: obiekt " + std::to_string(objCount) + " = [" + obj + "]");
 
             // Wyciąga wartość klucza: "key":"val" lub "key":val
             auto field = [&](const std::string& key, bool quoted) -> std::string {
@@ -505,11 +528,16 @@ void Game::loadTopScores() {
             const auto cs = field("coins", false);
             if (!cs.empty()) { try { e.coins = std::stoi(cs); } catch (...) {} }
 
+            LOG("loadTopScores:   name=[" + e.name + "] time=[" + e.time + "] coins=" + std::to_string(e.coins));
+
             if (!e.name.empty() && !e.time.empty())
                 topScores_.push_back(e);
+            else
+                LOG("loadTopScores:   POMINIETO (name lub time puste)");
         }
 
         scoresStatus_ = "Wczytano: " + std::to_string(topScores_.size()) + " wynikow";
+        LOG("loadTopScores: " + scoresStatus_);
 
         auto toSec = [](const std::string& t) -> int {
             const auto col = t.find(':');
@@ -526,8 +554,13 @@ void Game::loadTopScores() {
         if (topScores_.size() > 10)
             topScores_.resize(10);
 
+    } catch (const std::exception& ex) {
+        scoresStatus_ = "BLAD: " + std::string(ex.what());
+        LOG("loadTopScores: WYJATEK = " + scoresStatus_);
+        topScores_.clear();
     } catch (...) {
-        scoresStatus_ = "BLAD WCZYTYWANIA";
+        scoresStatus_ = "NIEZNANY BLAD";
+        LOG("loadTopScores: NIEZNANY WYJATEK");
         topScores_.clear();
     }
 }
