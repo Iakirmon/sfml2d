@@ -8,9 +8,7 @@ Game::Game()
     : window_(sf::VideoMode(1280, 720), "Platformer") {
     window_.setFramerateLimit(60);
 
-    // Load font (user must ensure file exists)
     if (!font_.loadFromFile("assets/fonts/Roboto-Regular.ttf")) {
-        // fallback: try without subdir, but keep font_ alive
         font_.loadFromFile("Roboto-Regular.ttf");
     }
 
@@ -23,6 +21,7 @@ Game::Game()
 
     playMusic("assets/music/gameplay.ogg");
 
+    // Kolejność: od najdalszej (najwolniejsza) do najbliższej (najszybsza)
     bgLayers_.emplace_back("assets/textures/bg_clouds.png",    0.2f, 720.f);
     bgLayers_.emplace_back("assets/textures/bg_mountains.png", 0.4f, 720.f);
     bgLayers_.emplace_back("assets/textures/bg_trees.png",     0.7f, 720.f);
@@ -78,8 +77,7 @@ void Game::handleEvents() {
             state_ == GameState::GAME_OVER) {
             reset();
         }
-        
-        // Handle input name when WINNING
+
         if (state_ == GameState::WINNING) {
             if (event.type == sf::Event::TextEntered) {
                 char c = static_cast<char>(event.text.unicode);
@@ -163,14 +161,14 @@ void Game::render() {
 void Game::drawHUD() {
     const auto total = level_.getTotalCoins();
     const auto collected = level_.getCollectedCoins();
-    
+
     int minutes = static_cast<int>(elapsedTime_) / 60;
     int seconds = static_cast<int>(elapsedTime_) % 60;
 
     hudTextCoins_.setString(
         "Coins: " + std::to_string(collected) + " / " + std::to_string(total));
     hudTextLives_.setString("Lives: " + std::to_string(player_.getLives()));
-    hudTextTime_.setString("Time: " + std::to_string(minutes) + ":" + 
+    hudTextTime_.setString("Time: " + std::to_string(minutes) + ":" +
                            (seconds < 10 ? "0" : "") + std::to_string(seconds));
 
     window_.draw(hudTextCoins_);
@@ -200,13 +198,13 @@ void Game::drawWinningScreen() {
     centerText_.setOrigin(bounds.width / 2.f, bounds.height / 2.f);
     centerText_.setPosition(1280.f / 2.f, 250.f);
     window_.draw(centerText_);
-    
+
     inputText_.setString(playerInput_ + "_");
     sf::FloatRect inputBounds = inputText_.getLocalBounds();
     inputText_.setOrigin(inputBounds.width / 2.f, inputBounds.height / 2.f);
     inputText_.setPosition(1280.f / 2.f, 400.f);
     window_.draw(inputText_);
-    
+
     sf::Text pressEnterText;
     pressEnterText.setFont(font_);
     pressEnterText.setCharacterSize(16);
@@ -219,15 +217,14 @@ void Game::drawWinningScreen() {
 }
 
 void Game::saveScore(const std::string& playerName) {
-    // Simple JSON format - append to scores.json file
     std::ofstream file("scores.json", std::ios::app);
     if (file.is_open()) {
         int minutes = static_cast<int>(elapsedTime_) / 60;
         int seconds = static_cast<int>(elapsedTime_) % 60;
-        std::string timeStr = std::to_string(minutes) + ":" + 
+        std::string timeStr = std::to_string(minutes) + ":" +
                               (seconds < 10 ? "0" : "") + std::to_string(seconds);
-        
-        file << "{\"name\":\"" << playerName << "\",\"time\":\"" << timeStr << "\",\"coins\":" 
+
+        file << "{\"name\":\"" << playerName << "\",\"time\":\"" << timeStr << "\",\"coins\":"
              << level_.getCollectedCoins() << "}\n";
         file.close();
     }
@@ -253,4 +250,3 @@ void Game::playMusic(const std::string& filepath, bool loop, float volume) {
 void Game::stopMusic() {
     music_.stop();
 }
-

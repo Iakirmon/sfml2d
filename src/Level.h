@@ -21,4 +21,3 @@ private:
     std::vector<Platform> platforms_;
     std::vector<Coin> coins_;
 };
-

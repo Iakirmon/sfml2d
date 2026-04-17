@@ -2,8 +2,11 @@
 #include <iostream>
 
 bool AudioManager::load(const std::string& name, const std::string& filepath) {
+    // try_emplace tworzy wpis w mapie bez przenoszenia istniejących węzłów (C++17)
     auto [it, inserted] = sounds_.try_emplace(name);
-    if (!inserted) return true;
+    if (!inserted) {
+        return true;
+    }
 
     if (!it->second.buffer.loadFromFile(filepath)) {
         std::cerr << "[AudioManager] Nie można załadować: " << filepath << "\n";

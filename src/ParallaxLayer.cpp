@@ -7,8 +7,8 @@ ParallaxLayer::ParallaxLayer(const std::string& filepath, float speedFactor, flo
     texture_.loadFromFile(filepath);
 
     sf::Vector2u texSize = texture_.getSize();
-    float scaleY = (texSize.y > 0) ? screenHeight / static_cast<float>(texSize.y) : 1.f;
-    scaledWidth_ = (texSize.x > 0) ? static_cast<float>(texSize.x) * scaleY : screenHeight;
+    float scaleY = screenHeight / static_cast<float>(texSize.y);
+    scaledWidth_ = static_cast<float>(texSize.x) * scaleY;
 
     for (int i = 0; i < 2; ++i) {
         sprites_[i].setTexture(texture_);

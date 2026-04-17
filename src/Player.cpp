@@ -12,13 +12,16 @@ constexpr float MAX_FALL_SPEED = 800.0f;
 }
 
 Player::Player() {
-    constexpr int W = 32, H = 32;
+    // Rozmiar jednej klatki w tileshecie Kenney Player (720×330, siatka 9×3)
+    constexpr int W = 80, H = 110;
 
     if (!texture_.loadFromFile("assets/textures/player_sheet.png")) {
         texture_.loadFromFile("assets/textures/player.png");
     }
 
     sprite_.setTexture(texture_);
+
+    // texSize_ przechowuje rozmiar JEDNEJ klatki – używamy do skalowania i flipowania
     texSize_ = sf::Vector2u(W, H);
 
     sprite_.setScale(
@@ -27,32 +30,38 @@ Player::Player() {
     );
     sprite_.setPosition(spawnPosition_);
 
+    // Układ tileshetu Kenney (alfabetyczny, 9 kolumn × 3 rzędy po 80×110 px):
+    // Rząd 0: action1 action2 back cheer1 cheer2 climb1 climb2 duck fall
+    // Rząd 1: hang hold1 hold2 hurt idle jump kick skid slide
+    // Rząd 2: stand swim1 swim2 talk walk1 walk2 (3×puste)
+
+    // idle – kol 4, rząd 1
     Animation idle;
-    idle.frameDuration = 0.2f;
+    idle.frameDuration = 0.5f;
     idle.loop = true;
-    for (int i = 0; i < 4; ++i)
-        idle.frames.push_back({i * W, 0 * H, W, H});
+    idle.frames.push_back({4 * W, 1 * H, W, H});
     animator_.addAnimation("idle", idle);
 
+    // run – walk1 (kol 4, rząd 2) + walk2 (kol 5, rząd 2)
     Animation run;
-    run.frameDuration = 0.1f;
+    run.frameDuration = 0.15f;
     run.loop = true;
-    for (int i = 0; i < 4; ++i)
-        run.frames.push_back({i * W, 1 * H, W, H});
+    run.frames.push_back({4 * W, 2 * H, W, H});
+    run.frames.push_back({5 * W, 2 * H, W, H});
     animator_.addAnimation("run", run);
 
+    // jump – kol 5, rząd 1
     Animation jump;
     jump.frameDuration = 0.15f;
     jump.loop = false;
-    for (int i = 0; i < 2; ++i)
-        jump.frames.push_back({i * W, 2 * H, W, H});
+    jump.frames.push_back({5 * W, 1 * H, W, H});
     animator_.addAnimation("jump", jump);
 
+    // fall – kol 8, rząd 0
     Animation fall;
     fall.frameDuration = 0.2f;
     fall.loop = true;
-    for (int i = 0; i < 2; ++i)
-        fall.frames.push_back({i * W, 3 * H, W, H});
+    fall.frames.push_back({8 * W, 0 * H, W, H});
     animator_.addAnimation("fall", fall);
 
     animator_.play("idle");
@@ -152,7 +161,7 @@ void Player::setVelocityY(float vy) {
 void Player::setOnGround(bool val) {
     isOnGround_ = val;
     if (val) {
-        canDoubleJump_ = false;  // Reset double jump when on ground
+        canDoubleJump_ = false;
     }
 }
 
@@ -179,4 +188,3 @@ void Player::resetState() {
     sprite_.setOrigin(0.f, 0.f);
     animator_.play("idle");
 }
-

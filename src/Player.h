@@ -40,4 +40,3 @@ private:
     int lives_{3};
     sf::Vector2f spawnPosition_{100.f, 300.f};
 };
-

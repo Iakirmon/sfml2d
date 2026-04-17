@@ -8,7 +8,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Ścieżka do SFML
 set(SFML_DIR "C:/game2d/vcpkg/vcpkg_installed/x64-windows/share/sfml")
 
-# Ręczne linkowanie
 find_package(SFML COMPONENTS graphics window system audio)
 
 add_executable(Platformer
@@ -33,11 +32,15 @@ add_custom_command(TARGET Platformer POST_BUILD
 # Copy SFML DLLs
 add_custom_command(TARGET Platformer POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/sfml-window-2.dll" $<TARGET_FILE_DIR:Platformer>
+        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/sfml-window-2.dll"   $<TARGET_FILE_DIR:Platformer>
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/sfml-graphics-2.dll" $<TARGET_FILE_DIR:Platformer>
+        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/sfml-graphics-2.dll" $<TARGET_FILE_DIR:Platformer>
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/sfml-system-2.dll" $<TARGET_FILE_DIR:Platformer>
+        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/sfml-system-2.dll"   $<TARGET_FILE_DIR:Platformer>
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/freetype.dll" $<TARGET_FILE_DIR:Platformer>
+        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/sfml-audio-2.dll"    $<TARGET_FILE_DIR:Platformer>
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/openal32.dll"        $<TARGET_FILE_DIR:Platformer>
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/freetype.dll"        $<TARGET_FILE_DIR:Platformer>
 )

@@ -80,4 +80,3 @@ std::size_t Level::getCollectedCoins() const {
         coins_.begin(), coins_.end(),
         [](const Coin& c) { return c.isCollected(); }));
 }
-
