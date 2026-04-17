@@ -1,8 +1,12 @@
 #pragma once
 
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
+#include <deque>
 #include "Player.h"
 #include "Level.h"
+#include "AudioManager.h"
+#include "ParallaxLayer.h"
 
 enum class GameState {
     PLAYING,
@@ -27,6 +31,8 @@ private:
     void drawWinningScreen();
     void reset();
     void saveScore(const std::string& playerName);
+    void playMusic(const std::string& filepath, bool loop = true, float volume = 50.f);
+    void stopMusic();
 
     sf::RenderWindow window_;
     sf::Font font_;
@@ -35,6 +41,9 @@ private:
 
     Player player_;
     Level level_;
+    AudioManager audio_;
+    sf::Music music_;
+    std::deque<ParallaxLayer> bgLayers_;
 
     sf::Text hudTextCoins_;
     sf::Text hudTextLives_;

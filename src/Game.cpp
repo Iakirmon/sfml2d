@@ -16,6 +16,17 @@ Game::Game()
 
     level_.load();
 
+    audio_.load("jump",     "assets/sounds/jump.ogg");
+    audio_.load("coin",     "assets/sounds/coin.ogg");
+    audio_.load("death",    "assets/sounds/death.ogg");
+    audio_.load("gameover", "assets/sounds/gameover.ogg");
+
+    playMusic("assets/music/gameplay.ogg");
+
+    bgLayers_.emplace_back("assets/textures/bg_clouds.png",    0.2f, 720.f);
+    bgLayers_.emplace_back("assets/textures/bg_mountains.png", 0.4f, 720.f);
+    bgLayers_.emplace_back("assets/textures/bg_trees.png",     0.7f, 720.f);
+
     hudTextCoins_.setFont(font_);
     hudTextCoins_.setCharacterSize(20);
     hudTextCoins_.setFillColor(sf::Color::White);
@@ -91,25 +102,48 @@ void Game::handleEvents() {
 
 void Game::update(float dt) {
     elapsedTime_ += dt;
-    
+
+    float playerX = player_.getHitbox().left;
+    for (auto& layer : bgLayers_) {
+        layer.update(playerX);
+    }
+
+    int coinsBefore = static_cast<int>(level_.getCollectedCoins());
+
     player_.handleInput();
     player_.update(dt);
     level_.checkCollisions(player_);
 
-    if (player_.getHitbox().top > 720.f + 50.f) {
-        player_.respawn();
+    if (player_.justJumped()) {
+        audio_.play("jump");
     }
 
-    if (player_.getLives() <= 0) {
-        state_ = GameState::GAME_OVER;
+    if (static_cast<int>(level_.getCollectedCoins()) > coinsBefore) {
+        audio_.play("coin");
     }
-    if (level_.allCoinsCollected()) {
-        state_ = GameState::WINNING;  // Change to WINNING for player name input
+
+    if (player_.getHitbox().top > 720.f + 50.f) {
+        player_.respawn();
+        audio_.play("death");
+    }
+
+    if (player_.getLives() <= 0 && state_ == GameState::PLAYING) {
+        audio_.play("gameover");
+        state_ = GameState::GAME_OVER;
+        playMusic("assets/music/gameover.ogg", false);
+    }
+    if (level_.allCoinsCollected() && state_ == GameState::PLAYING) {
+        state_ = GameState::WINNING;
+        playMusic("assets/music/win.ogg", false);
     }
 }
 
 void Game::render() {
-    window_.clear(sf::Color(30, 30, 30));
+    window_.clear(sf::Color(135, 206, 235));
+
+    for (auto& layer : bgLayers_) {
+        layer.draw(window_);
+    }
 
     level_.draw(window_);
     player_.draw(window_);
@@ -201,9 +235,22 @@ void Game::saveScore(const std::string& playerName) {
 
 void Game::reset() {
     state_ = GameState::PLAYING;
-    player_ = Player();
+    player_.resetState();
     level_.load();
     elapsedTime_ = 0.f;
     playerInput_ = "";
+    playMusic("assets/music/gameplay.ogg");
+}
+
+void Game::playMusic(const std::string& filepath, bool loop, float volume) {
+    music_.stop();
+    if (!music_.openFromFile(filepath)) return;
+    music_.setLoop(loop);
+    music_.setVolume(volume);
+    music_.play();
+}
+
+void Game::stopMusic() {
+    music_.stop();
 }
 

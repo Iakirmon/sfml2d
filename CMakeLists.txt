@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(SFML_DIR "C:/game2d/vcpkg/vcpkg_installed/x64-windows/share/sfml")
 
 # Ręczne linkowanie
-find_package(SFML COMPONENTS graphics window system)
+find_package(SFML COMPONENTS graphics window system audio)
 
 add_executable(Platformer
     src/main.cpp
@@ -18,9 +18,12 @@ add_executable(Platformer
     src/Platform.cpp
     src/Coin.cpp
     src/Level.cpp
+    src/Animator.cpp
+    src/AudioManager.cpp
+    src/ParallaxLayer.cpp
 )
 
-target_link_libraries(Platformer PRIVATE sfml-graphics sfml-window sfml-system)
+target_link_libraries(Platformer PRIVATE sfml-graphics sfml-window sfml-system sfml-audio)
 
 add_custom_command(TARGET Platformer POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
