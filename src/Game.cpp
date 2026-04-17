@@ -1,7 +1,6 @@
 #include "Game.h"
 
 #include <algorithm>
-#include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -445,87 +444,92 @@ void Game::startGame() {
 
 void Game::loadTopScores() {
     topScores_.clear();
-    scoresPath_   = (std::filesystem::current_path() / "scores.json").string();
+    scoresPath_   = "scores.json";
     scoresStatus_ = "";
 
-    // Wczytaj cały plik jako jeden string (odporne na \r\n, \n, \r)
-    std::ifstream file(scoresPath_, std::ios::binary);
-    if (!file.is_open()) {
-        scoresStatus_ = "BRAK PLIKU";
-        return;
-    }
+    try {
+        // Wczytaj cały plik jako jeden string (odporne na \r\n / \n / \r)
+        std::ifstream file(scoresPath_, std::ios::binary);
+        if (!file.is_open()) {
+            scoresStatus_ = "BRAK PLIKU scores.json obok Platformer.exe";
+            return;
+        }
 
-    std::ostringstream buf;
-    buf << file.rdbuf();
-    const std::string content = buf.str();
+        std::ostringstream buf;
+        buf << file.rdbuf();
+        const std::string content = buf.str();
 
-    if (content.empty()) {
-        scoresStatus_ = "PLIK PUSTY";
-        return;
-    }
+        if (content.empty()) {
+            scoresStatus_ = "PLIK PUSTY";
+            return;
+        }
 
-    // Szukaj kolejnych obiektów { ... }
-    std::size_t pos = 0;
-    while (pos < content.size()) {
-        const auto objStart = content.find('{', pos);
-        if (objStart == std::string::npos) break;
-        const auto objEnd = content.find('}', objStart);
-        if (objEnd == std::string::npos) break;
+        // Szukaj kolejnych obiektów { ... } – niezależnie od końcówek linii
+        std::size_t pos = 0;
+        while (pos < content.size()) {
+            const auto objStart = content.find('{', pos);
+            if (objStart == std::string::npos) break;
+            const auto objEnd = content.find('}', objStart);
+            if (objEnd == std::string::npos) break;
 
-        const std::string obj = content.substr(objStart, objEnd - objStart + 1);
-        pos = objEnd + 1;
+            const std::string obj = content.substr(objStart, objEnd - objStart + 1);
+            pos = objEnd + 1;
 
-        // Wyciąga wartość klucza: "key":"val" lub "key":val (z opcjonalnymi spacjami)
-        auto field = [&](const std::string& key, bool quoted) -> std::string {
-            const std::string kStr = "\"" + key + "\":";
-            auto kp = obj.find(kStr);
-            if (kp == std::string::npos) return "";
-            auto vs = kp + kStr.size();
-            while (vs < obj.size() && (obj[vs] == ' ' || obj[vs] == '\t')) ++vs;
-            if (vs >= obj.size()) return "";
-            if (quoted) {
-                if (obj[vs] != '"') return "";
-                ++vs;
-                const auto ve = obj.find('"', vs);
-                if (ve == std::string::npos) return "";
-                return obj.substr(vs, ve - vs);
-            } else {
-                auto ve = obj.find_first_of(",}", vs);
-                if (ve == std::string::npos) ve = obj.size();
-                std::string val = obj.substr(vs, ve - vs);
-                // Usuń białe znaki z obu stron
-                const auto t1 = val.find_first_not_of(" \t\r\n");
-                const auto t2 = val.find_last_not_of(" \t\r\n");
-                return (t1 == std::string::npos) ? "" : val.substr(t1, t2 - t1 + 1);
-            }
+            // Wyciąga wartość klucza: "key":"val" lub "key":val
+            auto field = [&](const std::string& key, bool quoted) -> std::string {
+                const std::string kStr = "\"" + key + "\":";
+                auto kp = obj.find(kStr);
+                if (kp == std::string::npos) return "";
+                auto vs = kp + kStr.size();
+                while (vs < obj.size() && (obj[vs] == ' ' || obj[vs] == '\t')) ++vs;
+                if (vs >= obj.size()) return "";
+                if (quoted) {
+                    if (obj[vs] != '"') return "";
+                    ++vs;
+                    const auto ve = obj.find('"', vs);
+                    if (ve == std::string::npos) return "";
+                    return obj.substr(vs, ve - vs);
+                } else {
+                    auto ve = obj.find_first_of(",}", vs);
+                    if (ve == std::string::npos) ve = obj.size();
+                    std::string val = obj.substr(vs, ve - vs);
+                    const auto t1 = val.find_first_not_of(" \t\r\n");
+                    const auto t2 = val.find_last_not_of(" \t\r\n");
+                    return (t1 == std::string::npos) ? "" : val.substr(t1, t2 - t1 + 1);
+                }
+            };
+
+            ScoreEntry e;
+            e.name        = field("name",  true);
+            e.time        = field("time",  true);
+            const auto cs = field("coins", false);
+            if (!cs.empty()) { try { e.coins = std::stoi(cs); } catch (...) {} }
+
+            if (!e.name.empty() && !e.time.empty())
+                topScores_.push_back(e);
+        }
+
+        scoresStatus_ = "Wczytano: " + std::to_string(topScores_.size()) + " wynikow";
+
+        auto toSec = [](const std::string& t) -> int {
+            const auto col = t.find(':');
+            if (col == std::string::npos) return 99999;
+            try { return std::stoi(t.substr(0, col)) * 60 + std::stoi(t.substr(col + 1)); }
+            catch (...) { return 99999; }
         };
 
-        ScoreEntry e;
-        e.name        = field("name",  true);
-        e.time        = field("time",  true);
-        const auto cs = field("coins", false);
-        if (!cs.empty()) { try { e.coins = std::stoi(cs); } catch (...) {} }
+        std::sort(topScores_.begin(), topScores_.end(),
+                  [&](const ScoreEntry& a, const ScoreEntry& b) {
+                      return toSec(a.time) < toSec(b.time);
+                  });
 
-        if (!e.name.empty() && !e.time.empty())
-            topScores_.push_back(e);
+        if (topScores_.size() > 10)
+            topScores_.resize(10);
+
+    } catch (...) {
+        scoresStatus_ = "BLAD WCZYTYWANIA";
+        topScores_.clear();
     }
-
-    scoresStatus_ = "Wczytano: " + std::to_string(topScores_.size());
-
-    auto toSec = [](const std::string& t) -> int {
-        const auto col = t.find(':');
-        if (col == std::string::npos) return 99999;
-        try { return std::stoi(t.substr(0, col)) * 60 + std::stoi(t.substr(col + 1)); }
-        catch (...) { return 99999; }
-    };
-
-    std::sort(topScores_.begin(), topScores_.end(),
-              [&](const ScoreEntry& a, const ScoreEntry& b) {
-                  return toSec(a.time) < toSec(b.time);
-              });
-
-    if (topScores_.size() > 10)
-        topScores_.resize(10);
 }
 
 void Game::saveScore(const std::string& playerName) {
