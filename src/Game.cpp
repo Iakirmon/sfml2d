@@ -6,16 +6,26 @@
 #include <sstream>
 #include <string>
 
-// Prosty logger do pliku debug.log
+// Prosty logger – zapisuje do %TEMP%\game2d_debug.log (zawsze zapisywalny na Windows)
+static std::string logPath() {
+    const char* tmp = std::getenv("TEMP");
+    if (tmp) return std::string(tmp) + "\\game2d_debug.log";
+    const char* home = std::getenv("USERPROFILE");
+    if (home) return std::string(home) + "\\game2d_debug.log";
+    return "C:\\game2d_debug.log";
+}
+static const std::string LOG_PATH = logPath();
+
 static void LOG(const std::string& msg) {
-    std::ofstream f("debug.log", std::ios::app);
+    std::ofstream f(LOG_PATH, std::ios::app);
     if (f.is_open()) f << msg << "\n";
 }
 
 Game::Game()
     : window_(sf::VideoMode(1280, 720), "Platformer") {
     // Wyczyść log i zapisz start
-    { std::ofstream f("debug.log"); f << "=== GAME START ===\n"; }
+    { std::ofstream f(LOG_PATH); f << "=== GAME START ===\n"; }
+    LOG("LOG_PATH = " + LOG_PATH);
     window_.setFramerateLimit(60);
 
     if (!font_.loadFromFile("assets/fonts/Roboto-Regular.ttf")) {
