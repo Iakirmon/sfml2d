@@ -92,7 +92,7 @@ void Game::handleEvents() {
             window_.close();
         }
 
-        // --- MENU (klawiatura) ---
+        // --- obsługa stanów (else if zapobiega obsłudze tego samego eventu przez dwa stany) ---
         if (state_ == GameState::MENU) {
             if (event.type == sf::Event::KeyPressed) {
                 if (event.key.code == sf::Keyboard::Up)
@@ -104,12 +104,7 @@ void Game::handleEvents() {
                     else if (menuSelectedItem_ == 1) { loadTopScores(); state_ = GameState::SCORES; }
                     else if (menuSelectedItem_ == 2) window_.close();
                 }
-            }
-        }
-
-        // --- MENU (mysz) ---
-        if (state_ == GameState::MENU) {
-            if (event.type == sf::Event::MouseMoved) {
+            } else if (event.type == sf::Event::MouseMoved) {
                 sf::Vector2f mouse(static_cast<float>(event.mouseMove.x),
                                    static_cast<float>(event.mouseMove.y));
                 const float itemY[3] = {320.f, 390.f, 460.f};
@@ -117,10 +112,8 @@ void Game::handleEvents() {
                     if (mouse.y >= itemY[i] - 20.f && mouse.y <= itemY[i] + 20.f)
                         menuSelectedItem_ = i;
                 }
-            }
-            if (event.type == sf::Event::MouseButtonPressed &&
-                event.mouseButton.button == sf::Mouse::Left) {
-                // Aktualizuj zaznaczenie na podstawie pozycji kliknięcia
+            } else if (event.type == sf::Event::MouseButtonPressed &&
+                       event.mouseButton.button == sf::Mouse::Left) {
                 sf::Vector2f click(static_cast<float>(event.mouseButton.x),
                                    static_cast<float>(event.mouseButton.y));
                 const float itemY[3] = {320.f, 390.f, 460.f};
@@ -132,23 +125,16 @@ void Game::handleEvents() {
                 else if (menuSelectedItem_ == 1) { loadTopScores(); state_ = GameState::SCORES; }
                 else if (menuSelectedItem_ == 2) window_.close();
             }
-        }
-
-        // --- SCORES ---
-        if (state_ == GameState::SCORES) {
+        } else if (state_ == GameState::SCORES) {
             if (event.type == sf::Event::KeyPressed &&
                 (event.key.code == sf::Keyboard::Escape ||
                  event.key.code == sf::Keyboard::Return)) {
                 state_ = GameState::MENU;
-            }
-            if (event.type == sf::Event::MouseButtonPressed &&
-                event.mouseButton.button == sf::Mouse::Left) {
+            } else if (event.type == sf::Event::MouseButtonPressed &&
+                       event.mouseButton.button == sf::Mouse::Left) {
                 state_ = GameState::MENU;
             }
-        }
-
-        // --- PLAYING ---
-        if (state_ == GameState::PLAYING) {
+        } else if (state_ == GameState::PLAYING) {
             if (event.type == sf::Event::KeyPressed &&
                 event.key.code == sf::Keyboard::Escape) {
                 state_ = GameState::MENU;
@@ -156,31 +142,26 @@ void Game::handleEvents() {
             }
         }
 
-        // --- GAME_OVER ---
-        if (state_ == GameState::GAME_OVER) {
+        // --- GAME_OVER / WINNING (else if – kontynuacja łańcucha) ---
+        else if (state_ == GameState::GAME_OVER) {
             if (event.type == sf::Event::KeyPressed) {
                 if (event.key.code == sf::Keyboard::R)
                     startGame();
-                if (event.key.code == sf::Keyboard::Escape) {
+                else if (event.key.code == sf::Keyboard::Escape) {
                     state_ = GameState::MENU;
                     playMusic("assets/music/menu.ogg");
                 }
             }
-        }
-
-        // --- WINNING ---
-        if (state_ == GameState::WINNING) {
+        } else if (state_ == GameState::WINNING) {
             if (event.type == sf::Event::TextEntered) {
                 char c = static_cast<char>(event.text.unicode);
                 if (c >= 32 && c < 127 && playerInput_.length() < maxInputLength_) {
                     playerInput_ += c;
                 }
-            }
-            if (event.type == sf::Event::KeyPressed) {
+            } else if (event.type == sf::Event::KeyPressed) {
                 if (event.key.code == sf::Keyboard::BackSpace && !playerInput_.empty()) {
                     playerInput_.pop_back();
-                }
-                if (event.key.code == sf::Keyboard::Return && !playerInput_.empty()) {
+                } else if (event.key.code == sf::Keyboard::Return && !playerInput_.empty()) {
                     saveScore(playerInput_);
                     state_ = GameState::MENU;
                     playerInput_ = "";
