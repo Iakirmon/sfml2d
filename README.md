@@ -4,7 +4,7 @@
 
 ---
 
-Gra platformowa 2D napisana w C++17 z użyciem biblioteki SFML 2.x.  
+Gra platformowa 2D napisana w C++17 z użyciem biblioteki SFML 2.6.2.  
 Gracz porusza się po platformach, zbiera monety, skacze (triple jump), a całość uzupełniają animacje sprite'ów, efekty dźwiękowe, muzyka w tle i wielowarstwowe tło parallax.  
 Gra posiada menu główne, ekran wyników (Top 10) oraz zapis wyników do pliku JSON.
 
