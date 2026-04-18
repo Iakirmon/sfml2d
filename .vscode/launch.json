@@ -2,7 +2,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug Platformer (MSVC)",
+            "name": "Debug Platformer (RelWithDebInfo – zalecane)",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/RelWithDebInfo/Platformer.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/RelWithDebInfo",
+            "environment": [],
+            "console": "externalTerminal"
+        },
+        {
+            "name": "Debug Platformer (Debug – wymaga -d DLL)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/Debug/Platformer.exe",
