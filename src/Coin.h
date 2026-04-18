@@ -25,4 +25,8 @@ public:
 
     bool isCollected() const;
     void collect(); // ustawia collected_ = true
+
+private:
+    sf::CircleShape shape_;
+    bool collected_{false};
 };
