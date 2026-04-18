@@ -23,7 +23,8 @@ static void LOG(const std::string& msg) {
 }
 
 Game::Game()
-    : window_(sf::VideoMode(1280, 720), "Platformer") {
+    : window_(sf::VideoMode(1280, 720), "Platformer"),
+      gameView_(sf::FloatRect(0.f, 0.f, 1280.f, 720.f)) {
     // Wyczyść log i zapisz start
     { std::ofstream f(LOG_PATH); f << "=== GAME START ===\n"; }
     LOG("LOG_PATH = " + LOG_PATH);
@@ -73,6 +74,8 @@ Game::Game()
     inputText_.setFont(font_);
     inputText_.setCharacterSize(24);
     inputText_.setFillColor(sf::Color::Yellow);
+
+    gameView_.setCenter(640.f, 360.f);
 }
 
 void Game::run() {
@@ -182,7 +185,7 @@ void Game::update(float dt) {
             layer.update(menuScrollOffset_);
         return;
     }
-
+    
     // GAME_OVER, WIN, WINNING - gra wstrzymana
     if (state_ != GameState::PLAYING) return;
 
@@ -221,26 +224,37 @@ void Game::update(float dt) {
         state_ = GameState::WINNING;
         playMusic("assets/music/win.ogg", false);
     }
+
+    updateCamera(dt);
 }
 
 void Game::render() {
     window_.clear(sf::Color(135, 206, 235));
 
+    // 1. Parallax – zawsze w screen space (default view)
+    window_.setView(window_.getDefaultView());
     for (auto& layer : bgLayers_)
         layer.draw(window_);
 
     if (state_ == GameState::MENU) {
+        // drawMenu() dziedziczy default view ustawiony dla parallax
         drawMenu();
     } else if (state_ == GameState::SCORES) {
+        // drawScores() dziedziczy default view ustawiony dla parallax
         drawScores();
     } else {
+        // 2. Obiekty świata – widok kamery (world space)
+        window_.setView(gameView_);
         level_.draw(window_);
         player_.draw(window_);
+
+        // 3. HUD i nakładki – z powrotem do screen space
+        window_.setView(window_.getDefaultView());
         drawHUD();
 
-        if (state_ == GameState::GAME_OVER)    drawGameOver();
-        else if (state_ == GameState::WINNING)  drawWinningScreen();
-        else if (state_ == GameState::WIN)      drawWin();
+        if      (state_ == GameState::GAME_OVER) drawGameOver();
+        else if (state_ == GameState::WINNING)   drawWinningScreen();
+        else if (state_ == GameState::WIN)       drawWin();
     }
 
     window_.display();
@@ -446,6 +460,27 @@ void Game::startGame() {
     elapsedTime_ = 0.f;
     playerInput_ = "";
     playMusic("assets/music/gameplay.ogg");
+    gameView_.setCenter(640.f, 360.f);
+}
+
+void Game::updateCamera(float dt) {
+    const float levelWidth = level_.getLevelWidth();
+    const float halfW      = 640.f;
+    const float halfH      = 360.f;
+    assert(level_.getLevelWidth() > 1280.f &&
+           "Poziom musi byc szerszy niz szerokosc ekranu");
+
+    sf::FloatRect hitbox = player_.getHitbox();
+    float targetX = hitbox.left + hitbox.width / 2.f;
+
+    // Lerp – płynne doganianie gracza
+    sf::Vector2f cur = gameView_.getCenter();
+    float smoothX = cur.x + (targetX - cur.x) * 5.f * dt;
+
+    // Clamp – kamera nie wychodzi poza granice poziomu
+    smoothX = std::max(halfW, std::min(smoothX, levelWidth - halfW));
+
+    gameView_.setCenter(smoothX, halfH);
 }
 
 void Game::loadTopScores() {

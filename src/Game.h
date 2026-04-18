@@ -41,6 +41,7 @@ private:
     void drawMenu();
     void drawScores();
     void startGame();
+    void updateCamera(float dt);
     void loadTopScores();
     void saveScore(const std::string& playerName);
     void playMusic(const std::string& filepath, bool loop = true, float volume = 50.f);
@@ -55,6 +56,7 @@ private:
     Level level_;
     AudioManager audio_;
     sf::Music music_;
+    sf::View  gameView_;
     std::deque<ParallaxLayer> bgLayers_;
 
     sf::Text hudTextCoins_;

@@ -17,6 +17,9 @@ public:
     std::size_t getTotalCoins() const;
     std::size_t getCollectedCoins() const;
 
+    static constexpr float LEVEL_WIDTH = 3840.f;
+    float getLevelWidth() const { return LEVEL_WIDTH; }
+
 private:
     std::vector<Platform> platforms_;
     std::vector<Coin> coins_;
