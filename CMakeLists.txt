@@ -29,28 +29,37 @@ add_custom_command(TARGET Platformer POST_BUILD
     ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:Platformer>/assets
 )
 
-# Copy SFML DLLs
+set(VCPKG_BIN     "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin")
+set(VCPKG_BIN_DBG "C:/game2d/vcpkg/vcpkg_installed/x64-windows/debug/bin")
+
+# Copy SFML DLLs – Release DLLs for Release, Debug DLLs for Debug
 add_custom_command(TARGET Platformer POST_BUILD
+    # SFML – wybierz Debug lub Release DLL przez generator expression
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/sfml-window-2.dll"   $<TARGET_FILE_DIR:Platformer>
+        "$<IF:$<CONFIG:Debug>,${VCPKG_BIN_DBG}/sfml-window-d-2.dll,${VCPKG_BIN}/sfml-window-2.dll>"
+        $<TARGET_FILE_DIR:Platformer>
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/sfml-graphics-2.dll" $<TARGET_FILE_DIR:Platformer>
+        "$<IF:$<CONFIG:Debug>,${VCPKG_BIN_DBG}/sfml-graphics-d-2.dll,${VCPKG_BIN}/sfml-graphics-2.dll>"
+        $<TARGET_FILE_DIR:Platformer>
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/sfml-system-2.dll"   $<TARGET_FILE_DIR:Platformer>
+        "$<IF:$<CONFIG:Debug>,${VCPKG_BIN_DBG}/sfml-system-d-2.dll,${VCPKG_BIN}/sfml-system-2.dll>"
+        $<TARGET_FILE_DIR:Platformer>
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/sfml-audio-2.dll"    $<TARGET_FILE_DIR:Platformer>
+        "$<IF:$<CONFIG:Debug>,${VCPKG_BIN_DBG}/sfml-audio-d-2.dll,${VCPKG_BIN}/sfml-audio-2.dll>"
+        $<TARGET_FILE_DIR:Platformer>
+    # Pozostałe DLL – dostępne tylko w Release (brak osobnych wersji debug)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/openal32.dll"        $<TARGET_FILE_DIR:Platformer>
+        "${VCPKG_BIN}/openal32.dll"   $<TARGET_FILE_DIR:Platformer>
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/ogg.dll"            $<TARGET_FILE_DIR:Platformer>
+        "${VCPKG_BIN}/ogg.dll"        $<TARGET_FILE_DIR:Platformer>
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/vorbis.dll"         $<TARGET_FILE_DIR:Platformer>
+        "${VCPKG_BIN}/vorbis.dll"     $<TARGET_FILE_DIR:Platformer>
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/vorbisenc.dll"      $<TARGET_FILE_DIR:Platformer>
+        "${VCPKG_BIN}/vorbisenc.dll"  $<TARGET_FILE_DIR:Platformer>
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/vorbisfile.dll"      $<TARGET_FILE_DIR:Platformer>
+        "${VCPKG_BIN}/vorbisfile.dll" $<TARGET_FILE_DIR:Platformer>
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/fmt.dll"              $<TARGET_FILE_DIR:Platformer>
+        "${VCPKG_BIN}/fmt.dll"        $<TARGET_FILE_DIR:Platformer>
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "C:/game2d/vcpkg/vcpkg_installed/x64-windows/bin/freetype.dll"        $<TARGET_FILE_DIR:Platformer>
+        "${VCPKG_BIN}/freetype.dll"   $<TARGET_FILE_DIR:Platformer>
 )
