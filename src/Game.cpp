@@ -1,6 +1,7 @@
 #include "Game.h"
 
 #include <algorithm>
+#include <cassert>
 #include <chrono>
 #include <fstream>
 #include <sstream>
@@ -34,6 +35,7 @@ Game::Game()
     } else {
         LOG("FONT: zaladowano OK");
     }
+    assert(font_.getInfo().family != "" && "Font nie zostal zaladowany – sprawdz assets/fonts/");
 
     level_.load();
 
@@ -222,15 +224,6 @@ void Game::update(float dt) {
 }
 
 void Game::render() {
-    static int renderLogCounter = 0;
-    if (state_ == GameState::SCORES) {
-        ++renderLogCounter;
-        if (renderLogCounter <= 5)
-            LOG("render: SCORES state, topScores_.size()=" + std::to_string(topScores_.size()));
-    } else {
-        renderLogCounter = 0;
-    }
-
     window_.clear(sf::Color(135, 206, 235));
 
     for (auto& layer : bgLayers_)
@@ -349,11 +342,6 @@ void Game::drawMenu() {
 }
 
 void Game::drawScores() {
-    static int drawLogCounter = 0;
-    ++drawLogCounter;
-    if (drawLogCounter <= 5)
-        LOG("drawScores: called, topScores_.size()=" + std::to_string(topScores_.size()));
-
     // --- Ciemny panel dla czytelnosci ---
     sf::RectangleShape panel(sf::Vector2f(780.f, 622.f));
     panel.setFillColor(sf::Color(8, 8, 24, 215));
@@ -451,6 +439,7 @@ void Game::drawScores() {
 }
 
 void Game::startGame() {
+    assert(menuSelectedItem_ >= 0 && menuSelectedItem_ < 3 && "menuSelectedItem_ poza zakresem 0-2");
     state_ = GameState::PLAYING;
     player_.resetState();
     level_.load();
@@ -464,7 +453,7 @@ void Game::loadTopScores() {
     scoresPath_   = "scores.json";
     scoresStatus_ = "";
 
-    LOG("loadTopScores: scoresPath_ = " + scoresPath_);
+    LOG("loadTopScores: " + scoresPath_);
 
     try {
         // Wczytaj cały plik jako jeden string (odporne na \r\n / \n / \r)
@@ -474,14 +463,10 @@ void Game::loadTopScores() {
             LOG("loadTopScores: " + scoresStatus_);
             return;
         }
-        LOG("loadTopScores: plik otwarty OK");
 
         std::ostringstream buf;
         buf << file.rdbuf();
         const std::string content = buf.str();
-        LOG("loadTopScores: dlugosc pliku = " + std::to_string(content.size()) + " bajtow");
-        // Pierwsze 200 znaków do loga
-        LOG("loadTopScores: poczatek pliku = [" + content.substr(0, std::min<std::size_t>(200, content.size())) + "]");
 
         if (content.empty()) {
             scoresStatus_ = "PLIK PUSTY";
@@ -491,7 +476,6 @@ void Game::loadTopScores() {
 
         // Szukaj kolejnych obiektów { ... } – niezależnie od końcówek linii
         std::size_t pos = 0;
-        int objCount = 0;
         while (pos < content.size()) {
             const auto objStart = content.find('{', pos);
             if (objStart == std::string::npos) break;
@@ -500,8 +484,6 @@ void Game::loadTopScores() {
 
             const std::string obj = content.substr(objStart, objEnd - objStart + 1);
             pos = objEnd + 1;
-            objCount++;
-            LOG("loadTopScores: obiekt " + std::to_string(objCount) + " = [" + obj + "]");
 
             // Wyciąga wartość klucza: "key":"val" lub "key":val
             auto field = [&](const std::string& key, bool quoted) -> std::string {
@@ -533,12 +515,8 @@ void Game::loadTopScores() {
             const auto cs = field("coins", false);
             if (!cs.empty()) { try { e.coins = std::stoi(cs); } catch (...) {} }
 
-            LOG("loadTopScores:   name=[" + e.name + "] time=[" + e.time + "] coins=" + std::to_string(e.coins));
-
             if (!e.name.empty() && !e.time.empty())
                 topScores_.push_back(e);
-            else
-                LOG("loadTopScores:   POMINIETO (name lub time puste)");
         }
 
         scoresStatus_ = "Wczytano: " + std::to_string(topScores_.size()) + " wynikow";
@@ -558,6 +536,7 @@ void Game::loadTopScores() {
 
         if (topScores_.size() > 10)
             topScores_.resize(10);
+        assert(topScores_.size() <= 10 && "topScores_ przekroczyl limit 10 po resize");
 
     } catch (const std::exception& ex) {
         scoresStatus_ = "BLAD: " + std::string(ex.what());
