@@ -89,7 +89,7 @@ void Player::handleInput() {
 
     // Edge detection: skok tylko na zboczu narastającym (pressed, nie held)
     // spaceWasPressed_ zapamiętuje stan z poprzedniej klatki
-    bool spacePressed = sf::Keyboard::isKeyPressed(sf::Keyboard::Space);
+    bool spacePressed = sf::Keyboard::isKeyPressed(sf::Keyboard::Up);
     if (spacePressed && !spaceWasPressed_) {
         if (isOnGround_) {
             // Skok 1: z ziemi
