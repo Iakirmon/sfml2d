@@ -47,6 +47,10 @@ public:
     void respawn();     // cofa na spawnPosition_, odejmuje życie
     void resetState();  // pełny reset na nową grę (pozycja, życia, flagi)
 
+    // Przygotowanie gracza na kolejny poziom kampanii — jak resetState,
+    // ale BEZ zmiany liczby żyć (życia przechodzą między poziomami).
+    void prepareForNextLevel();
+
     // Zwraca true przez jedną klatkę zaraz po wykonaniu skoku (do odtworzenia SFX)
     bool justJumped() const { return justJumped_; }
 

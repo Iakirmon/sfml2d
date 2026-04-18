@@ -17,14 +17,21 @@
 //   - co reaguje na klawiaturę/mysz (handleEvents)
 //   - co jest aktualizowane (update)
 //
-// Diagram przejść:
-//   MENU ──[Start]──► PLAYING ──[0 żyć]──► GAME_OVER ──[R]──► PLAYING
-//     ▲                  │                     └──[Esc]──────────┘
-//     │              [wszystkie monety]
-//     │                  ▼
-//     │              WINNING ──[Enter z imieniem]──► MENU
-//     │
-//     └──[Najlepsze wyniki]──► SCORES ──[Esc]──► MENU
+// Diagram przejść (kampania 3 poziomy, indeksy 0..Level::LEVEL_COUNT-1):
+//   MENU ──[Start]──► PLAYING(indeks 0) ──[wszystkie monety]──► PLAYING(indeks 1)
+//                       │                                           │
+//                       │                                  [wszystkie monety]
+//                       │                                           ▼
+//                       │                                   PLAYING(indeks 2)
+//                       │                                           │
+//                       │                                  [wszystkie monety]
+//                       │                                           ▼
+//                       │                                      WINNING ──[Enter z imieniem]──► MENU
+//                       │
+//                       └──[0 żyć]──► GAME_OVER ──[R]──► PLAYING(indeks 0)
+//                                         └──[Esc]──► MENU
+//   MENU ──[Najlepsze wyniki]──► SCORES ──[Esc]──► MENU
+//   MENU ◄──[Esc w PLAYING]── (postęp kampanii NIE zapisywany)
 // ============================================================
 enum class GameState {
     MENU,      // menu główne
@@ -62,7 +69,7 @@ private:
     void render();          // rysuje wszystko na ekranie
 
     // ── Rysowanie poszczególnych ekranów ───────────────────────────
-    void drawHUD();           // pasek góry (monety/życia/czas) — tylko w PLAYING
+    void drawHUD();           // pasek góry (monety/poziom/życia/czas) — rysowany też przy GAME_OVER/WINNING/WIN pod nakładką
     void drawGameOver();      // nakładka "GAME OVER" + klawisze
     void drawWin();           // nakładka "YOU WIN" (nieużywana aktualnie)
     void drawWinningScreen(); // nakładka + pole tekstowe do wpisania imienia
@@ -99,7 +106,8 @@ private:
     std::deque<ParallaxLayer> bgLayers_;
 
     // ── Elementy UI ────────────────────────────────────────────────
-    sf::Text hudTextCoins_;  // "Coins: X / Y" w lewym górnym rogu
+    sf::Text hudTextCoins_;  // "Coins: X / Y" w lewym górnym rogu (monety bieżącego poziomu)
+    sf::Text hudTextLevel_;  // "Level: a / b" (a = currentLevelIndex_+1, b = Level::LEVEL_COUNT)
     sf::Text hudTextLives_;  // "Lives: X"
     sf::Text hudTextTime_;   // "Time: M:SS"
     sf::Text centerText_;    // środkowe napisy (GAME OVER, YOU WIN)
@@ -109,6 +117,11 @@ private:
     float       elapsedTime_{0.f};    // czas od startu gry [s] → zapisywany w wyniku
     std::string playerInput_{""};     // imię wpisywane przez gracza po wygranej
     int         maxInputLength_{20};  // maksymalna długość imienia
+
+    // ── Kampania (wiele poziomów) ──────────────────────────────────
+    int currentLevelIndex_{0};          // bieżący poziom: 0..Level::LEVEL_COUNT-1
+    int coinsFromCompletedLevels_{0};   // suma getTotalCoins() z poziomów wcześniejszych
+                                        // (dodawana przy każdym przejściu k → k+1)
 
     // ── Stan menu ──────────────────────────────────────────────────
     int   menuSelectedItem_{0};   // podświetlony element (0=Start, 1=Wyniki, 2=Wyjdź)

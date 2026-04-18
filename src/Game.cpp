@@ -59,7 +59,7 @@ Game::Game()
     // Asercja: jeśli font nie załadowany, getInfo().family jest pustym stringiem
     assert(font_.getInfo().family != "" && "Font nie zostal zaladowany – sprawdz assets/fonts/");
 
-    level_.load(); // wczytaj układ platform i monet
+    level_.load(0); // wczytaj pierwszy poziom kampanii (indeks 0)
 
     // Załaduj SFX (krótkie dźwięki efektów) — wczytywane do RAM
     audio_.load("jump",     "assets/sounds/jump.ogg");
@@ -77,20 +77,26 @@ Game::Game()
 
     // Pola sf::Text są inicjalizowane tutaj bo setFont musi być wywołane
     // po załadowaniu font_ — lista inicjalizacyjna byłaby za wcześnie
+    // HUD: kolejność pionowa = kolejność rysowania → Coins / Level / Lives / Time
     hudTextCoins_.setFont(font_);
     hudTextCoins_.setCharacterSize(20);
     hudTextCoins_.setFillColor(sf::Color::White);
     hudTextCoins_.setPosition(10.f, 10.f); // lewy górny róg ekranu
 
+    hudTextLevel_.setFont(font_);
+    hudTextLevel_.setCharacterSize(20);
+    hudTextLevel_.setFillColor(sf::Color::White);
+    hudTextLevel_.setPosition(10.f, 40.f);
+
     hudTextLives_.setFont(font_);
     hudTextLives_.setCharacterSize(20);
     hudTextLives_.setFillColor(sf::Color::White);
-    hudTextLives_.setPosition(10.f, 40.f);
+    hudTextLives_.setPosition(10.f, 70.f);
 
     hudTextTime_.setFont(font_);
     hudTextTime_.setCharacterSize(20);
     hudTextTime_.setFillColor(sf::Color::White);
-    hudTextTime_.setPosition(10.f, 70.f);
+    hudTextTime_.setPosition(10.f, 100.f);
 
     centerText_.setFont(font_);
     centerText_.setCharacterSize(36);
@@ -297,9 +303,22 @@ void Game::update(float dt) {
         state_ = GameState::GAME_OVER;
         playMusic("assets/music/gameover.ogg", false); // loop=false: jingle, nie pętla
     }
+    // Zebrane wszystkie monety bieżącego poziomu:
+    //   - jeśli jest jeszcze kolejny poziom → załaduj go (bez ekranu imienia, bez resetu czasu i żyć),
+    //   - jeśli to był ostatni poziom (indeks == LEVEL_COUNT-1) → stan WINNING + jingle.
     if (level_.allCoinsCollected() && state_ == GameState::PLAYING) {
-        state_ = GameState::WINNING;
-        playMusic("assets/music/win.ogg", false);
+        if (currentLevelIndex_ + 1 < Level::LEVEL_COUNT) {
+            // Dorzuć monety ukończonego poziomu do sumy na wynik końcowy
+            coinsFromCompletedLevels_ += static_cast<int>(level_.getTotalCoins());
+            ++currentLevelIndex_;
+            level_.load(currentLevelIndex_);
+            player_.prepareForNextLevel();     // reset pozycji/flag bez dotykania żyć
+            gameView_.setCenter(640.f, 360.f); // kamera na początek nowego poziomu
+            // Muzyka gameplay leci dalej — NIE wołamy playMusic (to by ją restartowało)
+        } else {
+            state_ = GameState::WINNING;
+            playMusic("assets/music/win.ogg", false); // jingle, loop=false
+        }
     }
 
     // Aktualizuj kamerę po całej logice — używa aktualnej pozycji gracza
@@ -311,10 +330,14 @@ void Game::update(float dt) {
 //
 // Kolejność rysowania = kolejność warstw (późniejsze = na wierzchu):
 //   1. clear (czyste niebieskie tło)
-//   2. parallax (defaultView — screen space)
-//   3. level + player (gameView_ — world space)  ← tylko w PLAYING
-//   4. HUD + nakładki (defaultView — screen space)
+//   2. parallax (defaultView — screen space) — zawsze
+//   3. level + player (gameView_ — world space)  ← we wszystkich stanach poza MENU/SCORES
+//      (PLAYING, GAME_OVER, WINNING, WIN — świat gry jest wciąż widoczny pod nakładką)
+//   4. HUD + nakładki (defaultView — screen space) — w tych samych stanach co pkt 3
 //   5. display (zamień bufor → ekran)
+//
+// Uwaga: update() ma wczesny `return` dla stanów innych niż PLAYING, więc
+// czas w HUD i parallax powiązany z pozycją gracza są „zamrożone” poza PLAYING.
 // ============================================================
 void Game::render() {
     window_.clear(sf::Color(135, 206, 235)); // kolor nieba (jasnoniebieski)
@@ -353,7 +376,7 @@ void Game::render() {
 // drawHUD() — pasek informacyjny podczas gry
 // ============================================================
 void Game::drawHUD() {
-    const auto total     = level_.getTotalCoins();
+    const auto total     = level_.getTotalCoins();     // monety TYLKO bieżącego poziomu
     const auto collected = level_.getCollectedCoins();
 
     // Konwersja czasu [s] na format M:SS
@@ -362,11 +385,17 @@ void Game::drawHUD() {
 
     hudTextCoins_.setString(
         "Coins: " + std::to_string(collected) + " / " + std::to_string(total));
+    // Numer poziomu liczymy od 1 dla użytkownika; w kodzie indeks 0..LEVEL_COUNT-1
+    hudTextLevel_.setString(
+        "Level: " + std::to_string(currentLevelIndex_ + 1) + " / " +
+        std::to_string(Level::LEVEL_COUNT));
     hudTextLives_.setString("Lives: " + std::to_string(player_.getLives()));
     hudTextTime_.setString("Time: " + std::to_string(minutes) + ":" +
                            (seconds < 10 ? "0" : "") + std::to_string(seconds)); // zero-padding
 
+    // Kolejność rysowania = kolejność pionowa etykiet: Coins → Level → Lives → Time
     window_.draw(hudTextCoins_);
+    window_.draw(hudTextLevel_);
     window_.draw(hudTextLives_);
     window_.draw(hudTextTime_);
 }
@@ -574,13 +603,16 @@ void Game::drawScores() {
 void Game::startGame() {
     assert(menuSelectedItem_ >= 0 && menuSelectedItem_ < 3 &&
            "menuSelectedItem_ poza zakresem 0-2");
-    state_ = GameState::PLAYING;
-    player_.resetState();           // pozycja, życia, flagi
-    level_.load();                  // przeładuj platformy i monety
-    elapsedTime_ = 0.f;             // wyzeruj licznik czasu
-    playerInput_ = "";
+    state_                    = GameState::PLAYING;
+    // Reset kampanii: zawsze od poziomu 0 i wyzerowany akumulator monet
+    currentLevelIndex_        = 0;
+    coinsFromCompletedLevels_ = 0;
+    player_.resetState();                      // pozycja, życia, flagi
+    level_.load(currentLevelIndex_);           // załaduj pierwszy poziom kampanii
+    elapsedTime_              = 0.f;           // wyzeruj licznik czasu
+    playerInput_              = "";
     playMusic("assets/music/gameplay.ogg");
-    gameView_.setCenter(640.f, 360.f); // kamera na początku poziomu
+    gameView_.setCenter(640.f, 360.f);         // kamera na początku poziomu
 }
 
 // ============================================================
@@ -756,10 +788,16 @@ void Game::saveScore(const std::string& playerName) {
         std::string timeStr = std::to_string(minutes) + ":" +
                               (seconds < 10 ? "0" : "") + std::to_string(seconds);
 
+        // Łączna liczba monet z CAŁEJ kampanii (3 poziomy):
+        //   coinsFromCompletedLevels_ = suma getTotalCoins() z poziomów 0 i 1 (zebrana przy przejściach),
+        //   level_.getCollectedCoins() = monety ostatniego poziomu (==getTotalCoins() przy WINNING).
+        const int totalCoins = coinsFromCompletedLevels_ +
+                               static_cast<int>(level_.getCollectedCoins());
+
         // Ręcznie formatujemy JSON (bez zewnętrznej biblioteki)
         file << "{\"name\":\"" << playerName
              << "\",\"time\":\"" << timeStr
-             << "\",\"coins\":" << level_.getCollectedCoins() << "}\n";
+             << "\",\"coins\":" << totalCoins << "}\n";
         file.close();
     }
 }

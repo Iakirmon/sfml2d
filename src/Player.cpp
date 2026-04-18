@@ -209,3 +209,24 @@ void Player::resetState() {
     sprite_.setOrigin(0.f, 0.f); // przywróć origin po możliwym flipie
     animator_.play("idle");
 }
+
+void Player::prepareForNextLevel() {
+    // Reset po ukończeniu poziomu — lives_ celowo NIE zmieniamy (życia przechodzą dalej).
+    sprite_.setPosition(spawnPosition_);
+    velocity_        = {0.f, 0.f};
+    isOnGround_      = false;
+    canDoubleJump_   = false;
+    canTripleJump_   = false;
+    spaceWasPressed_ = false;
+    justJumped_      = false;
+    facingRight_     = true;
+
+    // Przywróć origin + DODATNIĄ skalę. Samo setOrigin(0,0) nie odwraca ujemnej skali X,
+    // która mogła powstać w Player::update gdy gracz szedł w lewo.
+    sprite_.setOrigin(0.f, 0.f);
+    const float sx = 40.f / static_cast<float>(texSize_.x);
+    const float sy = 50.f / static_cast<float>(texSize_.y);
+    sprite_.setScale(sx, sy);
+
+    animator_.play("idle");
+}

@@ -23,7 +23,13 @@
 // ============================================================
 class Level {
 public:
-    void load();                         // Czyści i wypełnia vectors platform i monet
+    // Liczba poziomów w kampanii (jedno źródło prawdy). Poziomy indeksowane 0..LEVEL_COUNT-1.
+    static constexpr int LEVEL_COUNT = 3;
+
+    // Czyści i wypełnia vectors platform i monet układem o podanym indeksie.
+    // Kontrakt: 0 <= levelIndex < LEVEL_COUNT (asercja w .cpp)
+    void load(int levelIndex);
+
     void checkCollisions(Player& player); // AABB: kolizje gracz↔platformy i monety
     bool allCoinsCollected() const;       // Warunek wygranej
     void draw(sf::RenderWindow& window);  // Rysuj platformy i monety
